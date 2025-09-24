@@ -9,43 +9,29 @@ vim.schedule(function()
 end)
 
 vim.o.breakindent = true
-
 vim.o.undofile = true
-
 vim.o.ignorecase = true
 vim.o.smartcase = true
-
 vim.o.signcolumn = 'yes'
-
 vim.o.updatetime = 250
-
 vim.o.timeoutlen = 300
-
 vim.o.splitright = true
 vim.o.splitbelow = true
-
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
-
 vim.o.inccommand = 'split'
-
 vim.o.cursorline = true
-
 vim.o.scrolloff = 10
-
 vim.o.confirm = true
-
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
-
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
-
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
@@ -311,7 +297,15 @@ require('lazy').setup({
       local capabilities = require('blink.cmp').get_lsp_capabilities()
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {
+          settings = {
+            gopls = {
+              analyses = { unusedparams = true, nilness = true, unusedwrite = true },
+              staticcheck = true,
+              hints = { assignVariableTypes = true, parameterNames = true },
+            },
+          },
+        },
         -- pyright = {},
         lua_ls = {
           -- cmd = { ... },
@@ -329,11 +323,15 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'gopls',
+        'gofumpt',
+        'goimports',
+        'delve',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
-        ensure_installed = {}, 
+        ensure_installed = {},
         automatic_installation = false,
         handlers = {
           function(server_name)
@@ -363,7 +361,6 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
-        
         local disable_filetypes = { c = true, cpp = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
@@ -376,6 +373,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        go = { 'gofumpt', 'goimports' },
       },
     },
   },
@@ -395,8 +393,7 @@ require('lazy').setup({
           end
           return 'make install_jsregexp'
         end)(),
-        dependencies = {
-        },
+        dependencies = {},
         opts = {},
       },
       'folke/lazydev.nvim',
@@ -413,7 +410,7 @@ require('lazy').setup({
       },
 
       completion = {
-    
+
         documentation = { auto_show = false, auto_show_delay_ms = 500 },
       },
 
@@ -431,7 +428,7 @@ require('lazy').setup({
     },
   },
 
-  { 
+  {
     'folke/tokyonight.nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
@@ -447,7 +444,7 @@ require('lazy').setup({
 
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
-  { 
+  {
     'echasnovski/mini.nvim',
     config = function()
       require('mini.ai').setup { n_lines = 500 }
@@ -465,7 +462,23 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'go',
+        'gomod',
+        'gosum',
+        'gowork',
+      },
       auto_install = true,
       highlight = {
         enable = true,
@@ -474,20 +487,23 @@ require('lazy').setup({
       indent = { enable = true, disable = { 'ruby' } },
     },
   },
+  {
+    'leoluz/nvim-dap-go',
+    ft = 'go',
+    dependencies = { 'mfussenegger/nvim-dap' },
+    config = function()
+      require('dap-go').setup()
+    end,
+  },
 
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    This is the easiest way to modularize your config.
-  --
-  --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
-
+  { import = 'custom.plugins' },
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
