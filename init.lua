@@ -169,7 +169,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-      vim.keymap.set('n', '<leader>e',':Neotree toggle<CR>',{ desc = 'Toggle Neotree'})
+      vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle Neotree' })
 
       vim.keymap.set('n', '<leader>/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
@@ -261,6 +261,13 @@ require('lazy').setup({
               end,
             })
           end
+          vim.api.nvim_create_autocmd('FileType', {
+            pattern = 'markdown',
+            callback = function()
+              vim.opt_local.conceallevel = 2 -- hide markup, show styled text
+              vim.opt_local.concealcursor = 'nc' -- conceal in normal + command modes
+            end,
+          })
 
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>th', function()
@@ -497,37 +504,85 @@ require('lazy').setup({
     end,
   },
   {
-  'kevinhwang91/nvim-ufo',
-  event = 'VeryLazy',
-  dependencies = { 'kevinhwang91/promise-async' },
-  init = function()
-    -- sensible defaults so folds start open but are available
-    vim.o.foldcolumn = '1'
-    vim.o.foldlevel = 99
-    vim.o.foldlevelstart = 99
-    vim.o.foldenable = true
-  end,
-  opts = {
-    -- prefer Treesitter, fallback to indent
-    provider_selector = function(_, filetype, _)
-      return { 'treesitter', 'indent' }
+    'kevinhwang91/nvim-ufo',
+    event = 'VeryLazy',
+    dependencies = { 'kevinhwang91/promise-async' },
+    init = function()
+      -- sensible defaults so folds start open but are available
+      vim.o.foldcolumn = '1'
+      vim.o.foldlevel = 99
+      vim.o.foldlevelstart = 99
+      vim.o.foldenable = true
+    end,
+    opts = {
+      -- prefer Treesitter, fallback to indent
+      provider_selector = function(_, filetype, _)
+        return { 'treesitter', 'indent' }
+      end,
+    },
+    config = function(_, opts)
+      require('ufo').setup(opts)
+      -- optional keymaps
+      vim.keymap.set('n', 'zR', require('ufo').openAllFolds, { desc = 'Open all folds' })
+      vim.keymap.set('n', 'zM', require('ufo').closeAllFolds, { desc = 'Close all folds' })
+      vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds, { desc = 'Open folds except kinds' })
+      vim.keymap.set('n', 'zm', function()
+        require('ufo').closeFoldsWith()
+      end, { desc = 'Close folds with level' })
+      -- Peek folded lines with K; fallback to LSP hover if not on a fold
+      vim.keymap.set('n', 'K', function()
+        local winid = require('ufo').peekFoldedLinesUnderCursor()
+        if not winid then
+          vim.lsp.buf.hover()
+        end
+      end, { desc = 'Peek fold / LSP hover' })
     end,
   },
-  config = function(_, opts)
-    require('ufo').setup(opts)
-    -- optional keymaps
-    vim.keymap.set('n', 'zR', require('ufo').openAllFolds, { desc = 'Open all folds' })
-    vim.keymap.set('n', 'zM', require('ufo').closeAllFolds, { desc = 'Close all folds' })
-    vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds, { desc = 'Open folds except kinds' })
-    vim.keymap.set('n', 'zm', function() require('ufo').closeFoldsWith() end, { desc = 'Close folds with level' })
-    -- Peek folded lines with K; fallback to LSP hover if not on a fold
-    vim.keymap.set('n', 'K', function()
-      local winid = require('ufo').peekFoldedLinesUnderCursor()
-      if not winid then vim.lsp.buf.hover() end
-    end, { desc = 'Peek fold / LSP hover' })
-  end,
-},
+  -- plugins/markdown_glow.lua (or inside your main plugin list)
+  {
+    'ellisonleao/glow.nvim',
+    cmd = { 'Glow', 'GlowInstall' }, -- lazy-load on command
+    ft = { 'markdown' }, -- also load when opening .md
+    opts = {
+      border = 'rounded', -- floating window border
+      width_ratio = 0.9, -- 90% of screen width
+      height_ratio = 0.9, -- 90% of screen height
+      -- style = "dark",               -- uncomment to force dark/light
+    },
+    keys = {
+      { '<leader>mp', '<cmd>Glow<CR>', desc = '[M]arkdown [P]review (Glow)' },
+      { '<leader>mP', '<cmd>Glow!<CR>', desc = 'Preview in split (Glow)' },
+    },
+  },
 
+  -- Bullets and checkboxes
+  { 'dkarter/bullets.vim', ft = { 'markdown', 'text' } },
+
+  -- Conceal and icons for checkboxes
+  {
+    'plasticboy/vim-markdown',
+    ft = { 'markdown' },
+    dependencies = { 'godlygeek/tabular' }, -- for tables
+    config = function()
+      vim.g.vim_markdown_folding_disabled = 1
+      vim.g.vim_markdown_conceal = 1
+      vim.g.vim_markdown_conceal_code_blocks = 0
+    end,
+  },
+  {
+    'mfussenegger/nvim-lint',
+    config = function()
+      require('lint').linters_by_ft = {
+        markdown = { 'markdownlint' },
+      }
+      -- auto run lint on save
+      vim.api.nvim_create_autocmd({ 'BufWritePost' }, {
+        callback = function()
+          require('lint').try_lint()
+        end,
+      })
+    end,
+  },
 
   require 'kickstart.plugins.debug',
   require 'kickstart.plugins.indent_line',
