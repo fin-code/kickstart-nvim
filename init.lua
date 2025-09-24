@@ -496,6 +496,38 @@ require('lazy').setup({
       require('dap-go').setup()
     end,
   },
+  {
+  'kevinhwang91/nvim-ufo',
+  event = 'VeryLazy',
+  dependencies = { 'kevinhwang91/promise-async' },
+  init = function()
+    -- sensible defaults so folds start open but are available
+    vim.o.foldcolumn = '1'
+    vim.o.foldlevel = 99
+    vim.o.foldlevelstart = 99
+    vim.o.foldenable = true
+  end,
+  opts = {
+    -- prefer Treesitter, fallback to indent
+    provider_selector = function(_, filetype, _)
+      return { 'treesitter', 'indent' }
+    end,
+  },
+  config = function(_, opts)
+    require('ufo').setup(opts)
+    -- optional keymaps
+    vim.keymap.set('n', 'zR', require('ufo').openAllFolds, { desc = 'Open all folds' })
+    vim.keymap.set('n', 'zM', require('ufo').closeAllFolds, { desc = 'Close all folds' })
+    vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds, { desc = 'Open folds except kinds' })
+    vim.keymap.set('n', 'zm', function() require('ufo').closeFoldsWith() end, { desc = 'Close folds with level' })
+    -- Peek folded lines with K; fallback to LSP hover if not on a fold
+    vim.keymap.set('n', 'K', function()
+      local winid = require('ufo').peekFoldedLinesUnderCursor()
+      if not winid then vim.lsp.buf.hover() end
+    end, { desc = 'Peek fold / LSP hover' })
+  end,
+},
+
 
   require 'kickstart.plugins.debug',
   require 'kickstart.plugins.indent_line',

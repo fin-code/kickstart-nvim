@@ -171,6 +171,20 @@ Clean, high-contrast theme with no italic comments.
 | n | `grt` | LSP: Type definition | LSP + Telescope | Jump to type. |
 | n | `<leader>th` | Toggle LSP inlay hints | LSP | Shows/hides type hints inline. |
 
+
+## Folding Shortcuts (nvim-ufo)
+
+| Shortcut | Action                                |
+|----------|----------------------------------------|
+| `za`     | Toggle current fold                   |
+| `zc`     | Close current fold                    |
+| `zo`     | Open current fold                     |
+| `zM`     | Close **all** folds                   |
+| `zR`     | Open **all** folds                    |
+| `zm`     | Close folds with a specific level     |
+| `zr`     | Open folds except certain kinds       |
+| `K`      | Peek folded lines (fallback: LSP hover) |
+
 > You can always discover more Telescope keybinds **inside** a picker with `?` (normal mode) or `<C-/>` (insert mode).  
 
 ---
